@@ -226,6 +226,9 @@ const open = async (type: string, id?: number) => {
     } finally {
       formLoading.value = false
     }
+  } else {
+    // 新增时，确保设备类型初始化为 undefined
+    formData.value.deviceType = undefined
   }
   // 如果有经纬信息，则数据加载完成后，显示地图
   showMap.value = true
@@ -297,12 +300,25 @@ const resetForm = () => {
 }
 
 /** 产品选择变化 */
-const handleProductChange = (productId: number) => {
+const handleProductChange = async (productId: number) => {
   if (!productId) {
     formData.value.deviceType = undefined
+    formData.value.locationType = undefined
     return
   }
-  const product = products.value?.find((item) => item.id === productId)
+  // 先尝试从本地产品列表中获取
+  let product = products.value?.find((item) => item.id === productId)
+  
+  // 如果本地产品列表中没有 deviceType 字段，调用产品详情接口获取完整信息
+  if (product && product.deviceType === undefined) {
+    try {
+      product = await ProductApi.getProduct(productId)
+    } catch (error) {
+      console.error('获取产品详情失败:', error)
+      return
+    }
+  }
+  
   formData.value.deviceType = product?.deviceType
   formData.value.locationType = product?.locationType
 }
