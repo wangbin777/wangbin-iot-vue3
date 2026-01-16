@@ -8,3 +8,5 @@ export * from './device'
 export * from './connection'
 
 export * from './runtime'
+
+export * from './point'
