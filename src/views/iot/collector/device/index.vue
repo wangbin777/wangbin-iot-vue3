@@ -184,7 +184,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="协议类型" prop="protocolType">
-          <el-select v-model="formData.protocolType" placeholder="请选择协议类型">
+          <el-select
+            v-model="formData.protocolType"
+            placeholder="请选择协议类型"
+            @change="handleProtocolTypeChange"
+          >
             <el-option
               v-for="type in protocolTypes"
               :key="type.value"
@@ -232,7 +236,7 @@
         </el-form-item>
 
         <!-- TCP/UDP 配置 -->
-        <template v-if="['TCP', 'UDP'].includes(formData.connection.connectionType)">
+        <template v-if="formData.protocolType !== 'MODBUS_RTU'">
           <el-form-item label="主机地址" prop="connection.host">
             <el-input v-model="formData.connection.host" placeholder="请输入主机地址" />
           </el-form-item>
@@ -244,51 +248,8 @@
               placeholder="请输入端口号"
             />
           </el-form-item>
-        </template>
-
-        <!-- 串口配置 -->
-        <template v-if="formData.connection.connectionType === 'SERIAL'">
-          <el-form-item label="串口名" prop="connection.serialPort">
-            <el-input
-              v-model="formData.connection.serialPort"
-              placeholder="请输入串口名，如 COM3"
-            />
-          </el-form-item>
-          <el-form-item label="波特率" prop="connection.baudRate">
-            <el-select v-model="formData.connection.baudRate" placeholder="请选择波特率">
-              <el-option label="9600" :value="9600" />
-              <el-option label="19200" :value="19200" />
-              <el-option label="38400" :value="38400" />
-              <el-option label="57600" :value="57600" />
-              <el-option label="115200" :value="115200" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="数据位" prop="connection.dataBits">
-            <el-select v-model="formData.connection.dataBits" placeholder="请选择数据位">
-              <el-option label="7" :value="7" />
-              <el-option label="8" :value="8" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="停止位" prop="connection.stopBits">
-            <el-select v-model="formData.connection.stopBits" placeholder="请选择停止位">
-              <el-option label="1" :value="1" />
-              <el-option label="1.5" :value="1.5" />
-              <el-option label="2" :value="2" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="校验位" prop="connection.parity">
-            <el-select v-model="formData.connection.parity" placeholder="请选择校验位">
-              <el-option label="无" value="none" />
-              <el-option label="奇校验" value="odd" />
-              <el-option label="偶校验" value="even" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="流控" prop="connection.flowControl">
-            <el-select v-model="formData.connection.flowControl" placeholder="请选择流控">
-              <el-option label="无" value="none" />
-              <el-option label="硬件流控" value="hardware" />
-              <el-option label="软件流控" value="software" />
-            </el-select>
+          <el-form-item label="连接URL" prop="connection.url">
+            <el-input v-model="formData.connection.url" placeholder="请输入连接URL" />
           </el-form-item>
         </template>
 
@@ -327,19 +288,45 @@
         </el-form-item>
         <el-form-item label="扩展参数" prop="connection.extJson">
           <div class="w-full">
-            <div class="mb-2">
-              <el-button type="primary" size="small" @click="addExtParam">
-                <el-icon><Plus /></el-icon>
-                添加参数
-              </el-button>
+            <div v-if="protocolFieldConfigs.length === 0" class="text-gray-400 text-sm">
+              请先选择协议类型以加载字段配置
             </div>
-            <div v-if="extParamsList.length === 0" class="text-gray-400 text-sm">
-              暂无扩展参数，点击上方按钮添加
-            </div>
-            <div v-for="(item, index) in extParamsList" :key="index" class="flex gap-2 mb-2">
-              <el-input v-model="item.key" placeholder="参数名" class="flex-1" />
-              <el-input v-model="item.value" placeholder="参数值" class="flex-1" />
-              <el-button type="danger" size="small" @click="removeExtParam(index)">删除</el-button>
+            <div
+              v-for="field in protocolFieldConfigs"
+              :key="field.fieldName"
+              class="flex gap-2 mb-2 items-center"
+            >
+              <span class="text-sm w-24"
+                >{{ field.fieldLabel }}{{ field.required ? ' *' : '' }}</span
+              >
+              <el-select
+                v-if="field.options"
+                v-model="dynamicFormData[field.fieldName]"
+                :placeholder="`请选择${field.fieldLabel}`"
+                class="flex-1"
+                @focus="handleFieldFocus(field.fieldName)"
+              >
+                <el-option
+                  v-for="option in field.options"
+                  :key="option"
+                  :label="option"
+                  :value="option"
+                />
+              </el-select>
+              <el-input-number
+                v-else-if="field.fieldType === 'number'"
+                v-model="dynamicFormData[field.fieldName]"
+                :placeholder="`请输入${field.fieldLabel}`"
+                class="flex-1"
+                @focus="handleFieldFocus(field.fieldName)"
+              />
+              <el-input
+                v-else
+                v-model="dynamicFormData[field.fieldName]"
+                :placeholder="`请输入${field.fieldLabel}`"
+                class="flex-1"
+                @focus="handleFieldFocus(field.fieldName)"
+              />
             </div>
           </div>
         </el-form-item>
@@ -396,14 +383,9 @@ defineOptions({ name: 'IotCollectorDevice' })
 // 连接配置子表单接口
 interface ConnectionForm {
   connectionType: string // 连接类型：TCP/UDP/SERIAL
+  url: string // 连接URL
   host: string // 主机地址：IP或域名（TCP/UDP有效）
   port: number // 端口号（TCP/UDP有效）
-  serialPort: string // 串口名（SERIAL有效）
-  baudRate: number // 波特率（SERIAL有效）
-  dataBits: number // 数据位（SERIAL有效）
-  stopBits: number // 停止位（SERIAL有效）
-  parity: string // 校验位（SERIAL有效）
-  flowControl: string // 流控（SERIAL有效）
   connectTimeoutMs: number // 连接超时毫秒
   readTimeoutMs: number // 读超时毫秒
   writeTimeoutMs: number // 写超时毫秒
@@ -457,7 +439,6 @@ const queryFormRef = ref()
 const formRef = ref()
 const dialogVisible = ref(false)
 const isUpdate = ref(false)
-const extParamsList = ref<Array<{ key: string; value: string }>>([])
 
 // 设备表单数据
 const formData = reactive<DeviceFormData>({
@@ -474,14 +455,9 @@ const formData = reactive<DeviceFormData>({
   remark: '',
   connection: {
     connectionType: 'TCP',
+    url: '',
     host: '',
     port: 0,
-    serialPort: '',
-    baudRate: 9600,
-    dataBits: 8,
-    stopBits: 1,
-    parity: 'none',
-    flowControl: 'none',
     connectTimeoutMs: 3000,
     readTimeoutMs: 2000,
     writeTimeoutMs: 2000,
@@ -497,11 +473,16 @@ const formData = reactive<DeviceFormData>({
 
 const groups = ref<any[]>([])
 const connections = ref<any[]>([])
+const protocolFieldConfigs = ref<any[]>([])
+const dynamicFormData = reactive<Record<string, any>>({})
 const protocolTypes = [
   { label: 'MODBUS_TCP', value: 'MODBUS_TCP' },
   { label: 'MODBUS_RTU', value: 'MODBUS_RTU' },
-  { label: 'OPCUA', value: 'OPCUA' },
-  { label: 'MQTT', value: 'MQTT' }
+  { label: 'OPC_UA', value: 'OPC_UA' },
+  { label: 'SNMP', value: 'SNMP' },
+  { label: 'COAP', value: 'COAP' },
+  { label: 'IEC104', value: 'IEC104' },
+  { label: 'IEC61850', value: 'IEC61850' }
 ]
 
 // 表单验证规则
@@ -513,22 +494,15 @@ const formRules = reactive({
   'connection.connectionType': [{ required: true, message: '请选择连接类型', trigger: 'change' }],
   'connection.host': [
     {
-      required: () => ['TCP', 'UDP'].includes(formData.connection.connectionType),
+      required: () => formData.protocolType !== 'MODBUS_RTU',
       message: '请输入主机地址',
       trigger: 'blur'
     }
   ],
   'connection.port': [
     {
-      required: () => ['TCP', 'UDP'].includes(formData.connection.connectionType),
+      required: () => formData.protocolType !== 'MODBUS_RTU',
       message: '请输入端口号',
-      trigger: 'blur'
-    }
-  ],
-  'connection.serialPort': [
-    {
-      required: () => formData.connection.connectionType === 'SERIAL',
-      message: '请输入串口名',
       trigger: 'blur'
     }
   ]
@@ -608,14 +582,9 @@ const handleCreate = () => {
   // 初始化连接配置
   formData.connection = {
     connectionType: 'TCP',
+    url: '',
     host: '',
     port: 0,
-    serialPort: '',
-    baudRate: 9600,
-    dataBits: 8,
-    stopBits: 1,
-    parity: 'none',
-    flowControl: 'none',
     connectTimeoutMs: 3000,
     readTimeoutMs: 2000,
     writeTimeoutMs: 2000,
@@ -632,6 +601,16 @@ const handleCreate = () => {
 
   // 初始化扩展参数列表
   extParamsList.value = []
+
+  // 初始化动态表单数据
+  Object.keys(dynamicFormData).forEach((key) => {
+    delete dynamicFormData[key]
+  })
+
+  // 加载协议字段配置
+  if (formData.protocolType) {
+    handleProtocolTypeChange(formData.protocolType)
+  }
 
   dialogVisible.value = true
 }
@@ -655,8 +634,22 @@ const handleEdit = async (row: CollectorDeviceVO) => {
       runtime: runtimeData
     })
 
-    // 解析扩展参数
-    parseJsonToExtParams(connectionData.extJson || '{}')
+    // 加载协议字段配置
+    if (formData.protocolType) {
+      await handleProtocolTypeChange(formData.protocolType)
+
+      // 解析扩展参数并填充到动态表单
+      try {
+        const extJsonObj = JSON.parse(connectionData.extJson || '{}')
+        Object.keys(extJsonObj).forEach((key) => {
+          if (dynamicFormData.hasOwnProperty(key)) {
+            dynamicFormData[key] = extJsonObj[key]
+          }
+        })
+      } catch (error) {
+        console.error('解析扩展参数失败:', error)
+      }
+    }
 
     dialogVisible.value = true
   } catch (error) {
@@ -755,34 +748,58 @@ const handleSelectionChange = (selection: any[]) => {
   // 处理多选逻辑
 }
 
-const addExtParam = () => {
-  extParamsList.value.push({ key: '', value: '' })
+const handleProtocolTypeChange = async (protocolType: string) => {
+  try {
+    const data = await CollectorConnectionApi.getProtocolFields(protocolType)
+    protocolFieldConfigs.value = data || []
+
+    // 初始化动态表单数据
+    if (data && data.length > 0) {
+      data.forEach((field: any) => {
+        if (field.fieldType === 'number') {
+          dynamicFormData[field.fieldName] = field.defaultValue ? Number(field.defaultValue) : 0
+        } else {
+          dynamicFormData[field.fieldName] = field.defaultValue || ''
+        }
+      })
+    }
+
+    // 动态生成验证规则
+    updateDynamicFormRules()
+  } catch (error) {
+    ElMessage.error('获取协议字段配置失败')
+    console.error('获取协议字段配置失败:', error)
+  }
 }
 
-const removeExtParam = (index: number) => {
-  extParamsList.value.splice(index, 1)
+const updateDynamicFormRules = () => {
+  protocolFieldConfigs.value.forEach((field: any) => {
+    if (field.required) {
+      formRules[`dynamic.${field.fieldName}`] = [
+        { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' }
+      ]
+    } else {
+      delete formRules[`dynamic.${field.fieldName}`]
+    }
+  })
+}
+
+const handleFieldFocus = (fieldName: string) => {
+  const fieldConfig = protocolFieldConfigs.value.find((f: any) => f.fieldName === fieldName)
+  if (fieldConfig && dynamicFormData[fieldName] === fieldConfig.defaultValue) {
+    dynamicFormData[fieldName] = fieldConfig.fieldType === 'number' ? 0 : ''
+  }
 }
 
 const convertExtParamsToJson = () => {
-  const obj: Record<string, string> = {}
-  extParamsList.value.forEach((item) => {
-    if (item.key) {
-      obj[item.key] = item.value
+  const obj: Record<string, any> = {}
+  protocolFieldConfigs.value.forEach((field: any) => {
+    const value = dynamicFormData[field.fieldName]
+    if (value !== undefined && value !== null && value !== '') {
+      obj[field.fieldName] = value
     }
   })
   return JSON.stringify(obj)
-}
-
-const parseJsonToExtParams = (jsonStr: string) => {
-  try {
-    const obj = JSON.parse(jsonStr || '{}')
-    extParamsList.value = Object.keys(obj).map((key) => ({
-      key,
-      value: obj[key]
-    }))
-  } catch (error) {
-    extParamsList.value = []
-  }
 }
 
 // 生命周期

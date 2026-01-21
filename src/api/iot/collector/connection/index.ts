@@ -58,5 +58,13 @@ export const CollectorConnectionApi = {
   // 获取采集连接配置分页
   getConnectionPage: async (params: any) => {
     return await request.get({ url: `/iot/collector-connection/page`, params })
+  },
+
+  // 根据协议类型获取字段配置
+  getProtocolFields: async (protocolType: string) => {
+    return await request.get({
+      url: `/iot/collector-connection/protocol-fields`,
+      params: { protocolType }
+    })
   }
 }
