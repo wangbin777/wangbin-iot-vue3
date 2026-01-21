@@ -6,6 +6,7 @@ export interface CollectorConnectionVO {
   connectionType: string // 连接类型：TCP/UDP/SERIAL
   host?: string // 主机地址：IP或域名（TCP/UDP有效）
   port?: number // 端口号（TCP/UDP有效）
+  url?: string // 连接URL
   serialPort?: string // 串口名（SERIAL有效）
   baudRate?: number // 波特率（SERIAL有效）
   dataBits?: number // 数据位（SERIAL有效）
@@ -48,7 +49,10 @@ export const CollectorConnectionApi = {
 
   // 获取采集连接配置列表
   getConnectionList: async (ids: number[]) => {
-    return await request.get({ url: `/iot/collector-connection/list`, params: { ids: ids.join(',') } })
+    return await request.get({
+      url: `/iot/collector-connection/list`,
+      params: { ids: ids.join(',') }
+    })
   },
 
   // 获取采集连接配置分页

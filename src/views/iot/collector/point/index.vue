@@ -258,6 +258,13 @@
             placeholder="请输入最大采集周期"
           />
         </el-form-item>
+        <el-form-item label="点位变化阈值" prop="pointChangeThreshold">
+          <el-input-number
+            v-model="formData.pointChangeThreshold"
+            :min="0"
+            placeholder="请输入点位变化阈值"
+          />
+        </el-form-item>
         <el-form-item label="最小值" prop="minValue">
           <el-input-number v-model="formData.minValue" placeholder="请输入最小值" />
         </el-form-item>
@@ -380,6 +387,7 @@ const formData = reactive<CollectorPointVO>({
   baseCollectionInterval: 1000,
   minCollectionInterval: 500,
   maxCollectionInterval: 5000,
+  pointChangeThreshold: undefined,
   minValue: undefined,
   maxValue: undefined,
   unit: '',
@@ -453,6 +461,7 @@ const handleCreate = () => {
   formData.baseCollectionInterval = 1000
   formData.minCollectionInterval = 500
   formData.maxCollectionInterval = 5000
+  formData.pointChangeThreshold = undefined
   formData.minValue = undefined
   formData.maxValue = undefined
   formData.unit = ''

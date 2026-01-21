@@ -16,6 +16,7 @@ export interface CollectorPointVO {
   baseCollectionInterval?: number // 基础采集周期(ms)
   minCollectionInterval?: number // 最小采集周期(ms)
   maxCollectionInterval?: number // 最大采集周期(ms)
+  pointChangeThreshold?: number // 点位变化阈值
   minValue?: number // 最小值
   maxValue?: number // 最大值
   unit?: string // 单位

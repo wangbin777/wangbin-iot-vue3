@@ -30,12 +30,22 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleQuery" v-hasPermi="['iot:collector-connection:query']">
+        <el-button
+          type="primary"
+          @click="handleQuery"
+          v-hasPermi="['iot:collector-connection:query']"
+        >
           <el-icon><Search /></el-icon>
           查询
         </el-button>
-        <el-button @click="handleReset" v-hasPermi="['iot:collector-connection:query']">重置</el-button>
-        <el-button type="success" @click="handleCreate" v-hasPermi="['iot:collector-connection:create']">
+        <el-button @click="handleReset" v-hasPermi="['iot:collector-connection:query']"
+          >重置</el-button
+        >
+        <el-button
+          type="success"
+          @click="handleCreate"
+          v-hasPermi="['iot:collector-connection:create']"
+        >
           <el-icon><Plus /></el-icon>
           新增
         </el-button>
@@ -57,11 +67,10 @@
           <template v-if="scope.row.connectionType === 'SERIAL'">
             {{ scope.row.serialPort }}
           </template>
-          <template v-else>
-            {{ scope.row.host }}:{{ scope.row.port }}
-          </template>
+          <template v-else> {{ scope.row.host }}:{{ scope.row.port }} </template>
         </template>
       </el-table-column>
+      <el-table-column prop="url" label="连接URL" width="200" />
       <el-table-column prop="connectTimeoutMs" label="连接超时(ms)" width="120" sortable />
       <el-table-column prop="readTimeoutMs" label="读超时(ms)" width="100" sortable />
       <el-table-column prop="writeTimeoutMs" label="写超时(ms)" width="100" sortable />
@@ -112,14 +121,13 @@
       :title="isUpdate ? '编辑连接配置' : '新增连接配置'"
       width="600px"
     >
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="120px"
-      >
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px">
         <el-form-item label="连接类型" prop="connectionType">
-          <el-select v-model="formData.connectionType" placeholder="请选择连接类型" @change="handleConnectionTypeChange">
+          <el-select
+            v-model="formData.connectionType"
+            placeholder="请选择连接类型"
+            @change="handleConnectionTypeChange"
+          >
             <el-option label="TCP" value="TCP" />
             <el-option label="UDP" value="UDP" />
             <el-option label="SERIAL" value="SERIAL" />
@@ -138,6 +146,9 @@
               :max="65535"
               placeholder="请输入端口号"
             />
+          </el-form-item>
+          <el-form-item label="连接URL" prop="url">
+            <el-input v-model="formData.url" placeholder="请输入连接URL" />
           </el-form-item>
         </template>
 
@@ -273,6 +284,7 @@ const formData = reactive<CollectorConnectionVO>({
   connectionType: 'TCP',
   host: '',
   port: 0,
+  url: '',
   serialPort: '',
   baudRate: 9600,
   dataBits: 8,
@@ -295,13 +307,21 @@ const formData = reactive<CollectorConnectionVO>({
 const formRules = reactive({
   connectionType: [{ required: true, message: '请选择连接类型', trigger: 'change' }],
   host: [
-    { required: (formData.connectionType === 'TCP' || formData.connectionType === 'UDP'), message: '请输入主机地址', trigger: 'blur' }
+    {
+      required: formData.connectionType === 'TCP' || formData.connectionType === 'UDP',
+      message: '请输入主机地址',
+      trigger: 'blur'
+    }
   ],
   port: [
-    { required: (formData.connectionType === 'TCP' || formData.connectionType === 'UDP'), message: '请输入端口号', trigger: 'blur' }
+    {
+      required: formData.connectionType === 'TCP' || formData.connectionType === 'UDP',
+      message: '请输入端口号',
+      trigger: 'blur'
+    }
   ],
   serialPort: [
-    { required: (formData.connectionType === 'SERIAL'), message: '请输入串口名', trigger: 'blur' }
+    { required: formData.connectionType === 'SERIAL', message: '请输入串口名', trigger: 'blur' }
   ]
 })
 
@@ -341,6 +361,7 @@ const handleCreate = () => {
   formData.connectionType = 'TCP'
   formData.host = ''
   formData.port = 0
+  formData.url = ''
   formData.serialPort = ''
   formData.baudRate = 9600
   formData.dataBits = 8
