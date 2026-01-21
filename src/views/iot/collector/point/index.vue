@@ -312,12 +312,74 @@
 
         <!-- 扩展配置 -->
         <el-divider content-position="left">扩展配置</el-divider>
-        <el-form-item label="扩展配置" prop="additionalConfig">
-          <el-input
-            v-model="formData.additionalConfig"
-            placeholder="请输入扩展配置JSON格式（上报字段、设备信息等）"
-            type="textarea"
-            :rows="3"
+        <el-form-item label="上报字段" prop="reportField">
+          <el-input v-model="formData.reportField" placeholder="请输入上报字段" />
+        </el-form-item>
+        <el-form-item label="事件启用" prop="eventEnabled">
+          <el-select v-model="formData.eventEnabled" placeholder="请选择是否启用事件">
+            <el-option label="启用" :value="true" />
+            <el-option label="停用" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="上报启用" prop="reportEnabled">
+          <el-select v-model="formData.reportEnabled" placeholder="请选择是否启用上报">
+            <el-option label="启用" :value="true" />
+            <el-option label="停用" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="上报绑定" prop="reportBindings">
+          <el-button
+            type="primary"
+            size="small"
+            @click="handleAddReportBinding"
+            style="margin-bottom: 10px"
+          >
+            添加绑定
+          </el-button>
+          <el-table :data="formData.reportBindings" border style="width: 100%">
+            <el-table-column prop="deviceName" label="设备名称" width="200">
+              <template #default="scope">
+                <el-input v-model="scope.row.deviceName" placeholder="请输入设备名称" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="productKey" label="产品Key">
+              <template #default="scope">
+                <el-input v-model="scope.row.productKey" placeholder="请输入产品Key" />
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100">
+              <template #default="scope">
+                <el-button
+                  type="danger"
+                  size="small"
+                  @click="handleDeleteReportBinding(scope.$index)"
+                >
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-form-item>
+        <el-form-item label="变化阈值" prop="changeThreshold">
+          <el-input-number
+            v-model="formData.changeThreshold"
+            :min="0"
+            :step="0.01"
+            placeholder="请输入变化阈值"
+          />
+        </el-form-item>
+        <el-form-item label="事件最小间隔(ms)" prop="eventMinIntervalMs">
+          <el-input-number
+            v-model="formData.eventMinIntervalMs"
+            :min="0"
+            placeholder="请输入事件最小间隔"
+          />
+        </el-form-item>
+        <el-form-item label="变化最小间隔(ms)" prop="changeMinIntervalMs">
+          <el-input-number
+            v-model="formData.changeMinIntervalMs"
+            :min="0"
+            placeholder="请输入变化最小间隔"
           />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
@@ -372,8 +434,23 @@ const formRef = ref()
 const dialogVisible = ref(false)
 const isUpdate = ref(false)
 
+interface ReportBinding {
+  deviceName: string
+  productKey: string
+}
+
+interface ExtendedFormData extends CollectorPointVO {
+  reportField?: string
+  eventEnabled?: boolean
+  reportEnabled?: boolean
+  reportBindings?: ReportBinding[]
+  changeThreshold?: number
+  eventMinIntervalMs?: number
+  changeMinIntervalMs?: number
+}
+
 // 点位表单数据
-const formData = reactive<CollectorPointVO>({
+const formData = reactive<ExtendedFormData>({
   deviceId: '',
   pointId: '',
   pointCode: '',
@@ -398,6 +475,13 @@ const formData = reactive<CollectorPointVO>({
   alarmEnabled: 1,
   alarmRule: '',
   additionalConfig: '',
+  reportField: '',
+  eventEnabled: false,
+  reportEnabled: true,
+  reportBindings: [],
+  changeThreshold: 0,
+  eventMinIntervalMs: 5000,
+  changeMinIntervalMs: 1000,
   remark: ''
 })
 
@@ -472,6 +556,13 @@ const handleCreate = () => {
   formData.alarmEnabled = 1
   formData.alarmRule = ''
   formData.additionalConfig = ''
+  formData.reportField = ''
+  formData.eventEnabled = false
+  formData.reportEnabled = true
+  formData.reportBindings = []
+  formData.changeThreshold = 0
+  formData.eventMinIntervalMs = 5000
+  formData.changeMinIntervalMs = 1000
   formData.remark = ''
 
   dialogVisible.value = true
@@ -482,6 +573,38 @@ const handleEdit = async (row: CollectorPointVO) => {
   try {
     const data = await CollectorPointApi.getPoint(row.id!)
     Object.assign(formData, data)
+
+    // 解析扩展配置
+    if (data.additionalConfig) {
+      try {
+        const additionalConfig = JSON.parse(data.additionalConfig)
+        formData.reportField = additionalConfig.reportField || ''
+        formData.eventEnabled = additionalConfig.eventEnabled ?? false
+        formData.reportEnabled = additionalConfig.reportEnabled ?? true
+        formData.reportBindings = additionalConfig.reportBindings || []
+        formData.changeThreshold = additionalConfig.changeThreshold ?? 0
+        formData.eventMinIntervalMs = additionalConfig.eventMinIntervalMs ?? 5000
+        formData.changeMinIntervalMs = additionalConfig.changeMinIntervalMs ?? 1000
+      } catch (error) {
+        console.error('解析扩展配置失败:', error)
+        formData.reportField = ''
+        formData.eventEnabled = false
+        formData.reportEnabled = true
+        formData.reportBindings = []
+        formData.changeThreshold = 0
+        formData.eventMinIntervalMs = 5000
+        formData.changeMinIntervalMs = 1000
+      }
+    } else {
+      formData.reportField = ''
+      formData.eventEnabled = false
+      formData.reportEnabled = true
+      formData.reportBindings = []
+      formData.changeThreshold = 0
+      formData.eventMinIntervalMs = 5000
+      formData.changeMinIntervalMs = 1000
+    }
+
     dialogVisible.value = true
   } catch (error) {
     ElMessage.error('获取点位详情失败')
@@ -504,11 +627,34 @@ const handleDelete = async (id: number) => {
   }
 }
 
+const handleAddReportBinding = () => {
+  formData.reportBindings?.push({
+    deviceName: '',
+    productKey: ''
+  })
+}
+
+const handleDeleteReportBinding = (index: number) => {
+  formData.reportBindings?.splice(index, 1)
+}
+
 const handleSubmit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       try {
+        // 构建扩展配置JSON
+        const additionalConfig = {
+          reportField: formData.reportField || '',
+          eventEnabled: formData.eventEnabled ?? false,
+          reportEnabled: formData.reportEnabled ?? true,
+          reportBindings: formData.reportBindings || [],
+          changeThreshold: formData.changeThreshold ?? 0,
+          eventMinIntervalMs: formData.eventMinIntervalMs ?? 5000,
+          changeMinIntervalMs: formData.changeMinIntervalMs ?? 1000
+        }
+        formData.additionalConfig = JSON.stringify(additionalConfig)
+
         if (isUpdate.value) {
           await CollectorPointApi.updatePoint(formData)
           ElMessage.success('更新成功')
