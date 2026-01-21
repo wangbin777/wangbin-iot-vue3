@@ -599,9 +599,6 @@ const handleCreate = () => {
     consecutiveFail: 0
   }
 
-  // 初始化扩展参数列表
-  extParamsList.value = []
-
   // 初始化动态表单数据
   Object.keys(dynamicFormData).forEach((key) => {
     delete dynamicFormData[key]
