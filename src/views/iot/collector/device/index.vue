@@ -84,7 +84,11 @@
           查询
         </el-button>
         <el-button @click="handleReset" v-hasPermi="['iot:collector-device:query']">重置</el-button>
-        <el-button type="success" @click="handleCreate" v-hasPermi="['iot:collector-device:create']">
+        <el-button
+          type="success"
+          @click="handleCreate"
+          v-hasPermi="['iot:collector-device:create']"
+        >
           <el-icon><Plus /></el-icon>
           新增
         </el-button>
@@ -157,12 +161,7 @@
       :title="isUpdate ? '编辑采集设备' : '新增采集设备'"
       width="800px"
     >
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="120px"
-      >
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px">
         <!-- 基础信息 -->
         <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="设备编码" prop="deviceCode">
@@ -250,7 +249,10 @@
         <!-- 串口配置 -->
         <template v-if="formData.connection.connectionType === 'SERIAL'">
           <el-form-item label="串口名" prop="connection.serialPort">
-            <el-input v-model="formData.connection.serialPort" placeholder="请输入串口名，如 COM3" />
+            <el-input
+              v-model="formData.connection.serialPort"
+              placeholder="请输入串口名，如 COM3"
+            />
           </el-form-item>
           <el-form-item label="波特率" prop="connection.baudRate">
             <el-select v-model="formData.connection.baudRate" placeholder="请选择波特率">
@@ -324,12 +326,22 @@
           />
         </el-form-item>
         <el-form-item label="扩展参数" prop="connection.extJson">
-          <el-input
-            v-model="formData.connection.extJson"
-            placeholder="请输入扩展参数JSON格式"
-            type="textarea"
-            :rows="3"
-          />
+          <div class="w-full">
+            <div class="mb-2">
+              <el-button type="primary" size="small" @click="addExtParam">
+                <el-icon><Plus /></el-icon>
+                添加参数
+              </el-button>
+            </div>
+            <div v-if="extParamsList.length === 0" class="text-gray-400 text-sm">
+              暂无扩展参数，点击上方按钮添加
+            </div>
+            <div v-for="(item, index) in extParamsList" :key="index" class="flex gap-2 mb-2">
+              <el-input v-model="item.key" placeholder="参数名" class="flex-1" />
+              <el-input v-model="item.value" placeholder="参数值" class="flex-1" />
+              <el-button type="danger" size="small" @click="removeExtParam(index)">删除</el-button>
+            </div>
+          </div>
         </el-form-item>
 
         <!-- 运行态配置 -->
@@ -368,9 +380,9 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, reactive, ref} from 'vue'
-import {Plus, Search} from '@element-plus/icons-vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
+import { onMounted, reactive, ref } from 'vue'
+import { Plus, Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   CollectorConnectionApi,
   CollectorDeviceApi,
@@ -445,6 +457,7 @@ const queryFormRef = ref()
 const formRef = ref()
 const dialogVisible = ref(false)
 const isUpdate = ref(false)
+const extParamsList = ref<Array<{ key: string; value: string }>>([])
 
 // 设备表单数据
 const formData = reactive<DeviceFormData>({
@@ -499,13 +512,25 @@ const formRules = reactive({
   groupId: [{ required: true, message: '请选择设备分组', trigger: 'change' }],
   'connection.connectionType': [{ required: true, message: '请选择连接类型', trigger: 'change' }],
   'connection.host': [
-    { required: () => ['TCP', 'UDP'].includes(formData.connection.connectionType), message: '请输入主机地址', trigger: 'blur' }
+    {
+      required: () => ['TCP', 'UDP'].includes(formData.connection.connectionType),
+      message: '请输入主机地址',
+      trigger: 'blur'
+    }
   ],
   'connection.port': [
-    { required: () => ['TCP', 'UDP'].includes(formData.connection.connectionType), message: '请输入端口号', trigger: 'blur' }
+    {
+      required: () => ['TCP', 'UDP'].includes(formData.connection.connectionType),
+      message: '请输入端口号',
+      trigger: 'blur'
+    }
   ],
   'connection.serialPort': [
-    { required: () => formData.connection.connectionType === 'SERIAL', message: '请输入串口名', trigger: 'blur' }
+    {
+      required: () => formData.connection.connectionType === 'SERIAL',
+      message: '请输入串口名',
+      trigger: 'blur'
+    }
   ]
 })
 
@@ -521,7 +546,7 @@ const getDeviceList = async () => {
     const data = await CollectorDeviceApi.getDevicePage(params)
     // 合并分组名称信息
     const deviceList = data.list.map((device: any) => {
-      const group = groups.value.find(g => g.id === device.groupId)
+      const group = groups.value.find((g) => g.id === device.groupId)
       return {
         ...device,
         groupName: group ? group.groupName : ''
@@ -579,7 +604,7 @@ const handleCreate = () => {
   formData.enabled = true
   formData.status = 'OFFLINE'
   formData.remark = ''
-  
+
   // 初始化连接配置
   formData.connection = {
     connectionType: 'TCP',
@@ -597,14 +622,17 @@ const handleCreate = () => {
     retries: 3,
     extJson: '{}'
   }
-  
+
   // 初始化运行态配置
   formData.runtime = {
     online: false,
     retryCount: 0,
     consecutiveFail: 0
   }
-  
+
+  // 初始化扩展参数列表
+  extParamsList.value = []
+
   dialogVisible.value = true
 }
 
@@ -613,7 +641,7 @@ const handleEdit = async (row: CollectorDeviceVO) => {
   try {
     // 1. 获取设备基本信息
     const deviceData = await CollectorDeviceApi.getDevice(row.id)
-    
+
     // 2. 获取连接配置信息
     const connectionData = await CollectorConnectionApi.getConnection(deviceData.connectionId)
 
@@ -626,7 +654,10 @@ const handleEdit = async (row: CollectorDeviceVO) => {
       connection: connectionData,
       runtime: runtimeData
     })
-    
+
+    // 解析扩展参数
+    parseJsonToExtParams(connectionData.extJson || '{}')
+
     dialogVisible.value = true
   } catch (error) {
     ElMessage.error('获取设备详情失败')
@@ -654,6 +685,7 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       try {
+        formData.connection.extJson = convertExtParamsToJson()
         if (isUpdate.value) {
           // 更新设备逻辑
           // 1. 更新连接配置
@@ -682,7 +714,7 @@ const handleSubmit = async () => {
             ...formData.runtime,
             deviceId
           })
-          
+
           ElMessage.success('创建成功')
         }
         dialogVisible.value = false
@@ -721,6 +753,36 @@ const handleCurrentChange = (current: number) => {
 
 const handleSelectionChange = (selection: any[]) => {
   // 处理多选逻辑
+}
+
+const addExtParam = () => {
+  extParamsList.value.push({ key: '', value: '' })
+}
+
+const removeExtParam = (index: number) => {
+  extParamsList.value.splice(index, 1)
+}
+
+const convertExtParamsToJson = () => {
+  const obj: Record<string, string> = {}
+  extParamsList.value.forEach((item) => {
+    if (item.key) {
+      obj[item.key] = item.value
+    }
+  })
+  return JSON.stringify(obj)
+}
+
+const parseJsonToExtParams = (jsonStr: string) => {
+  try {
+    const obj = JSON.parse(jsonStr || '{}')
+    extParamsList.value = Object.keys(obj).map((key) => ({
+      key,
+      value: obj[key]
+    }))
+  } catch (error) {
+    extParamsList.value = []
+  }
 }
 
 // 生命周期

@@ -229,12 +229,22 @@
           />
         </el-form-item>
         <el-form-item label="扩展参数" prop="extJson">
-          <el-input
-            v-model="formData.extJson"
-            placeholder="请输入扩展参数JSON格式"
-            type="textarea"
-            :rows="3"
-          />
+          <div class="w-full">
+            <div class="mb-2">
+              <el-button type="primary" size="small" @click="addExtParam">
+                <el-icon><Plus /></el-icon>
+                添加参数
+              </el-button>
+            </div>
+            <div v-if="extParamsList.length === 0" class="text-gray-400 text-sm">
+              暂无扩展参数，点击上方按钮添加
+            </div>
+            <div v-for="(item, index) in extParamsList" :key="index" class="flex gap-2 mb-2">
+              <el-input v-model="item.key" placeholder="参数名" class="flex-1" />
+              <el-input v-model="item.value" placeholder="参数值" class="flex-1" />
+              <el-button type="danger" size="small" @click="removeExtParam(index)">删除</el-button>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input
@@ -279,6 +289,7 @@ const queryFormRef = ref()
 const formRef = ref()
 const dialogVisible = ref(false)
 const isUpdate = ref(false)
+const extParamsList = ref<Array<{ key: string; value: string }>>([])
 const formData = reactive<CollectorConnectionVO>({
   id: 0,
   connectionType: 'TCP',
@@ -374,12 +385,14 @@ const handleCreate = () => {
   formData.retries = 3
   formData.extJson = '{}'
   formData.remark = ''
+  extParamsList.value = []
   dialogVisible.value = true
 }
 
 const handleEdit = (row: CollectorConnectionVO) => {
   isUpdate.value = true
   Object.assign(formData, row)
+  parseJsonToExtParams(row.extJson || '{}')
   dialogVisible.value = true
 }
 
@@ -403,6 +416,7 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       try {
+        formData.extJson = convertExtParamsToJson()
         if (isUpdate.value) {
           await CollectorConnectionApi.updateConnection(formData)
           ElMessage.success('更新成功')
@@ -446,6 +460,36 @@ const handleCurrentChange = (current: number) => {
 
 const handleSelectionChange = (selection: CollectorConnectionVO[]) => {
   // 处理多选逻辑
+}
+
+const addExtParam = () => {
+  extParamsList.value.push({ key: '', value: '' })
+}
+
+const removeExtParam = (index: number) => {
+  extParamsList.value.splice(index, 1)
+}
+
+const convertExtParamsToJson = () => {
+  const obj: Record<string, string> = {}
+  extParamsList.value.forEach((item) => {
+    if (item.key) {
+      obj[item.key] = item.value
+    }
+  })
+  return JSON.stringify(obj)
+}
+
+const parseJsonToExtParams = (jsonStr: string) => {
+  try {
+    const obj = JSON.parse(jsonStr || '{}')
+    extParamsList.value = Object.keys(obj).map((key) => ({
+      key,
+      value: obj[key]
+    }))
+  } catch (error) {
+    extParamsList.value = []
+  }
 }
 
 // 生命周期
