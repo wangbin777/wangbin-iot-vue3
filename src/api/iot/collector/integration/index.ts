@@ -98,5 +98,9 @@ export const monitorApi = {
   // 获取监控错误统计
   getMonitorErrors: async () => {
     return await request.get({ url: '/admin/collector/integration/monitor/errors' })
+  },
+  // 获取监控性能详情
+  getMonitorPerfDetail: async () => {
+    return await request.get({ url: '/admin/collector/integration/monitor/perfDetail' })
   }
 }

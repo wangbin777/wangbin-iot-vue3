@@ -647,6 +647,161 @@
       </div>
     </el-card>
 
+    <!-- 性能详情监控 -->
+    <el-card class="mb-4 cyber-card">
+      <template #header>
+        <div class="cyber-card-header">
+          <div class="cyber-card-title">
+            <el-icon class="cyber-icon"><Cpu /></el-icon>
+            <span>性能详情监控</span>
+          </div>
+          <el-button class="cyber-button-small" @click="getMonitorPerfDetail">
+            <el-icon><Refresh /></el-icon>
+            刷新
+          </el-button>
+        </div>
+      </template>
+      <div v-if="perfDetailMonitor">
+        <!-- 基本信息 -->
+        <div class="cyber-component-section">
+          <h4 class="cyber-section-title">基本信息</h4>
+          <el-row :gutter="10">
+            <el-col :span="6">
+              <div class="cyber-detail-item">
+                <span class="cyber-detail-label">时间片数量:</span>
+                <span class="cyber-detail-value">{{ perfDetailMonitor.timeSliceCount || 0 }}</span>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="cyber-detail-item">
+                <span class="cyber-detail-label">时间片间隔(ms):</span>
+                <span class="cyber-detail-value">{{
+                  perfDetailMonitor.timeSliceIntervalMs || 0
+                }}</span>
+              </div>
+            </el-col>
+            <el-col :span="6">
+              <div class="cyber-detail-item">
+                <span class="cyber-detail-label">生成时间:</span>
+                <span class="cyber-detail-value">{{
+                  formatTimestamp(perfDetailMonitor.generatedAt)
+                }}</span>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 时间片执行时间 -->
+        <div
+          v-if="
+            perfDetailMonitor.timeSliceExecutionTimes &&
+            Object.keys(perfDetailMonitor.timeSliceExecutionTimes).length > 0
+          "
+          class="cyber-component-section"
+        >
+          <h4 class="cyber-section-title">时间片执行时间</h4>
+          <el-table
+            :data="
+              Object.entries(perfDetailMonitor.timeSliceExecutionTimes).map(([slice, time]) => ({
+                slice,
+                time
+              }))
+            "
+            border
+            class="cyber-table"
+          >
+            <el-table-column prop="slice" label="时间片" width="100" />
+            <el-table-column prop="time" label="执行时间(ms)" />
+          </el-table>
+        </div>
+
+        <!-- 过载时间片 -->
+        <div
+          v-if="
+            perfDetailMonitor.overloadedSlices &&
+            Object.keys(perfDetailMonitor.overloadedSlices).length > 0
+          "
+          class="cyber-component-section"
+        >
+          <h4 class="cyber-section-title">过载时间片</h4>
+          <el-table
+            :data="
+              Object.entries(perfDetailMonitor.overloadedSlices).map(([slice, time]) => ({
+                slice,
+                time
+              }))
+            "
+            border
+            class="cyber-table"
+          >
+            <el-table-column prop="slice" label="时间片" width="100" />
+            <el-table-column prop="time" label="过载时间(ms)" />
+          </el-table>
+        </div>
+
+        <!-- 最慢设备 -->
+        <div
+          v-if="
+            perfDetailMonitor.slowestDevices &&
+            Object.keys(perfDetailMonitor.slowestDevices).length > 0
+          "
+          class="cyber-component-section"
+        >
+          <h4 class="cyber-section-title">最慢设备</h4>
+          <el-table
+            :data="
+              Object.entries(perfDetailMonitor.slowestDevices).map(([deviceId, time]) => ({
+                deviceId,
+                time
+              }))
+            "
+            border
+            class="cyber-table"
+          >
+            <el-table-column prop="deviceId" label="设备ID" width="150" />
+            <el-table-column prop="time" label="执行时间(ms)" />
+          </el-table>
+        </div>
+
+        <!-- 设备统计信息 -->
+        <div
+          v-if="
+            perfDetailMonitor.deviceStats && Object.keys(perfDetailMonitor.deviceStats).length > 0
+          "
+          class="cyber-component-section"
+        >
+          <h4 class="cyber-section-title">设备统计信息</h4>
+          <div
+            v-for="(stats, deviceId) in perfDetailMonitor.deviceStats"
+            :key="deviceId"
+            style="margin-bottom: 16px"
+          >
+            <el-card class="cyber-component-card">
+              <template #header>
+                <div class="cyber-card-header">
+                  <span class="cyber-component-name">设备 {{ deviceId }}</span>
+                </div>
+              </template>
+              <div class="cyber-component-detail">
+                <el-row :gutter="10">
+                  <el-col :span="6" v-for="(value, key) in stats" :key="key">
+                    <div class="cyber-detail-item">
+                      <span class="cyber-detail-label">{{ key }}:</span>
+                      <span class="cyber-detail-value">{{ value }}</span>
+                    </div>
+                  </el-col>
+                </el-row>
+              </div>
+            </el-card>
+          </div>
+        </div>
+      </div>
+      <div v-else class="cyber-loading">
+        <el-icon class="cyber-loading-icon"><Loading /></el-icon>
+        <div class="cyber-loading-text">加载中...</div>
+      </div>
+    </el-card>
+
     <!-- 系统资源监控 -->
     <el-card class="mb-4 cyber-card">
       <template #header>
@@ -839,6 +994,7 @@ const deviceMonitor = ref<any>(null)
 const performanceMonitor = ref<any>(null)
 const systemMonitor = ref<any>(null)
 const errorMonitor = ref<any>(null)
+const perfDetailMonitor = ref<any>(null)
 const refreshing = ref(false)
 
 // 获取系统健康状态
@@ -898,6 +1054,16 @@ const getMonitorErrors = async () => {
   } catch (error) {
     ElMessage.error('获取错误统计失败')
     console.error('获取错误统计失败:', error)
+  }
+}
+
+// 获取性能详情监控
+const getMonitorPerfDetail = async () => {
+  try {
+    perfDetailMonitor.value = await monitorApi.getMonitorPerfDetail()
+  } catch (error) {
+    ElMessage.error('获取性能详情监控失败')
+    console.error('获取性能详情监控失败:', error)
   }
 }
 
@@ -1003,7 +1169,8 @@ const refreshAllData = async () => {
       getMonitorDevices(),
       getMonitorPerformance(),
       getMonitorSystem(),
-      getMonitorErrors()
+      getMonitorErrors(),
+      getMonitorPerfDetail()
     ])
     ElMessage.success('数据刷新成功')
   } catch (error) {
