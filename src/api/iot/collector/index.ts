@@ -10,3 +10,5 @@ export * from './connection'
 export * from './runtime'
 
 export * from './point'
+
+export * from './integration'

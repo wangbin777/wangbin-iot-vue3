@@ -92,6 +92,10 @@
           <el-icon><Plus /></el-icon>
           新增
         </el-button>
+        <el-button type="info" @click="handleMonitor" v-hasPermi="['iot:collector-device:query']">
+          <el-icon><View /></el-icon>
+          监控
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -128,7 +132,7 @@
       </el-table-column>
       <el-table-column prop="collectionIntervalMs" label="采集周期(ms)" width="120" sortable />
       <el-table-column prop="reportIntervalS" label="上报周期(s)" width="120" sortable />
-      <el-table-column label="操作" width="120" fixed="right">
+      <el-table-column label="操作" width="240" fixed="right">
         <template #default="scope">
           <el-button
             type="primary"
@@ -137,6 +141,22 @@
             v-hasPermi="['iot:collector-device:update']"
           >
             编辑
+          </el-button>
+          <el-button
+            type="success"
+            size="small"
+            @click="handleStartCollection(scope.row)"
+            v-hasPermi="['iot:collector-device:update']"
+          >
+            启动采集
+          </el-button>
+          <el-button
+            type="danger"
+            size="small"
+            @click="handleStopCollection(scope.row)"
+            v-hasPermi="['iot:collector-device:update']"
+          >
+            停止采集
           </el-button>
         </template>
       </el-table-column>
@@ -368,15 +388,19 @@
 
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Plus, Search, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import {
   CollectorConnectionApi,
   CollectorDeviceApi,
   CollectorDeviceGroupApi,
   CollectorDeviceRuntimeApi,
-  CollectorDeviceVO
+  CollectorDeviceVO,
+  deviceApi
 } from '@/api/iot/collector'
+
+const router = useRouter()
 
 defineOptions({ name: 'IotCollectorDevice' })
 
@@ -729,6 +753,34 @@ const handleEnableChange = async (row: any) => {
     // 恢复原来的状态
     row.enabled = !row.enabled
   }
+}
+
+const handleStartCollection = async (row: any) => {
+  try {
+    await deviceApi.startDevice(row.deviceCode)
+    ElMessage.success('启动采集成功')
+    // 刷新设备状态
+    getDeviceList()
+  } catch (error) {
+    ElMessage.error('启动采集失败')
+    console.error('启动采集失败:', error)
+  }
+}
+
+const handleStopCollection = async (row: any) => {
+  try {
+    await deviceApi.stopDevice(row.deviceCode)
+    ElMessage.success('停止采集成功')
+    // 刷新设备状态
+    getDeviceList()
+  } catch (error) {
+    ElMessage.error('停止采集失败')
+    console.error('停止采集失败:', error)
+  }
+}
+
+const handleMonitor = () => {
+  router.push('/iot/collector/monitor')
 }
 
 const handleSizeChange = (size: number) => {

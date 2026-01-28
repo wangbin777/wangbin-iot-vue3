@@ -387,6 +387,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           activeMenu: '/iot/operation/ota/firmware'
         },
         component: () => import('@/views/iot/ota/firmware/detail/index.vue')
+      },
+      {
+        path: 'collector/monitor',
+        name: 'IotCollectorMonitor',
+        meta: {
+          title: '采集器监控',
+          noCache: false,
+          hidden: true,
+          activeMenu: '/iot/collector/device'
+        },
+        component: () => import('@/views/iot/collector/monitor/index.vue')
       }
     ]
   }
