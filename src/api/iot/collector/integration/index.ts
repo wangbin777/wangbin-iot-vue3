@@ -4,160 +4,99 @@ import request from '@/config/axios'
 // 缓存接口
 export const cacheApi = {
   // 获取缓存统计信息
-  getCacheStats: () => {
-    return request({
-      url: '/admin/collector/integration/cache/stats',
-      method: 'get'
-    })
+  getCacheStats: async () => {
+    return await request.get({ url: '/admin/collector/integration/cache/stats' })
   },
   // 获取缓存健康状态
-  getCacheHealth: () => {
-    return request({
-      url: '/admin/collector/integration/cache/health',
-      method: 'get'
-    })
+  getCacheHealth: async () => {
+    return await request.get({ url: '/admin/collector/integration/cache/health' })
   }
 }
 
 // 数据接口
 export const dataApi = {
   // 获取设备单个数据点
-  getDevicePoint: (deviceId: string, pointId: string) => {
-    return request({
-      url: `/admin/collector/integration/data/device/${deviceId}/point/${pointId}`,
-      method: 'get'
-    })
+  getDevicePoint: async (deviceId: string, pointId: string) => {
+    return await request.get({ url: `/admin/collector/integration/data/device/${deviceId}/point/${pointId}` })
   },
   // 获取设备所有数据点
-  getDeviceData: (deviceId: string, pointIds?: string[]) => {
-    return request({
-      url: `/admin/collector/integration/data/device/${deviceId}`,
-      method: 'get',
-      params: { pointIds }
-    })
+  getDeviceData: async (deviceId: string, pointIds?: string[]) => {
+    return await request.get({ url: `/admin/collector/integration/data/device/${deviceId}`, params: { pointIds } })
   },
   // 获取所有设备列表
-  getDevices: () => {
-    return request({
-      url: '/admin/collector/integration/data/devices',
-      method: 'get'
-    })
+  getDevices: async () => {
+    return await request.get({ url: '/admin/collector/integration/data/devices' })
   },
   // 获取设备数据点配置
-  getDevicePointsConfig: (deviceId: string) => {
-    return request({
-      url: `/admin/collector/integration/data/device/${deviceId}/points`,
-      method: 'get'
-    })
+  getDevicePointsConfig: async (deviceId: string) => {
+    return await request.get({ url: `/admin/collector/integration/data/device/${deviceId}/points` })
   },
   // 重置设备自适应参数
-  resetDeviceAdaptive: (deviceId: string) => {
-    return request({
-      url: `/admin/collector/integration/data/device/${deviceId}/reset-adaptive`,
-      method: 'post'
-    })
+  resetDeviceAdaptive: async (deviceId: string) => {
+    return await request.post({ url: `/admin/collector/integration/data/device/${deviceId}/reset-adaptive` })
   }
 }
 
 // 设备接口
 export const deviceApi = {
   // 启动设备采集
-  startDevice: (deviceId: string) => {
-    return request({
-      url: `/admin/collector/integration/device/${deviceId}/start`,
-      method: 'post'
-    })
+  startDevice: async (deviceId: string) => {
+    return await request.post({ url: `/admin/collector/integration/device/${deviceId}/start` })
   },
   // 停止设备采集
-  stopDevice: (deviceId: string) => {
-    return request({
-      url: `/admin/collector/integration/device/${deviceId}/stop`,
-      method: 'post'
-    })
+  stopDevice: async (deviceId: string) => {
+    return await request.post({ url: `/admin/collector/integration/device/${deviceId}/stop` })
   },
   // 重新加载设备配置
-  reloadDevices: () => {
-    return request({
-      url: '/admin/collector/integration/device/reload',
-      method: 'post'
-    })
+  reloadDevices: async () => {
+    return await request.post({ url: '/admin/collector/integration/device/reload' })
   },
   // 获取设备状态
-  getDeviceStatus: (deviceId: string) => {
-    return request({
-      url: `/admin/collector/integration/device/${deviceId}/status`,
-      method: 'get'
-    })
+  getDeviceStatus: async (deviceId: string) => {
+    return await request.get({ url: `/admin/collector/integration/device/${deviceId}/status` })
   },
   // 获取设备统计信息
-  getDeviceStatistics: () => {
-    return request({
-      url: '/admin/collector/integration/device/statistics',
-      method: 'get'
-    })
+  getDeviceStatistics: async () => {
+    return await request.get({ url: '/admin/collector/integration/device/statistics' })
   },
   // 获取运行中的设备
-  getRunningDevices: () => {
-    return request({
-      url: '/admin/collector/integration/device/running',
-      method: 'get'
-    })
+  getRunningDevices: async () => {
+    return await request.get({ url: '/admin/collector/integration/device/running' })
   },
   // 检查设备是否运行
-  checkDeviceRunning: (deviceId: string) => {
-    return request({
-      url: `/admin/collector/integration/device/${deviceId}/running`,
-      method: 'get'
-    })
+  checkDeviceRunning: async (deviceId: string) => {
+    return await request.get({ url: `/admin/collector/integration/device/${deviceId}/running` })
   }
 }
 
 // 健康接口
 export const healthApi = {
   // 获取系统健康状态
-  getSystemHealth: () => {
-    return request({
-      url: '/admin/collector/integration/health',
-      method: 'get'
-    })
+  getSystemHealth: async () => {
+    return await request.get({ url: '/admin/collector/integration/health' })
   }
 }
 
 // 监控接口
 export const monitorApi = {
   // 获取监控缓存信息
-  getMonitorCache: () => {
-    return request({
-      url: '/admin/collector/integration/monitor/cache',
-      method: 'get'
-    })
+  getMonitorCache: async () => {
+    return await request.get({ url: '/admin/collector/integration/monitor/cache' })
   },
   // 获取监控设备状态
-  getMonitorDevices: () => {
-    return request({
-      url: '/admin/collector/integration/monitor/devices',
-      method: 'get'
-    })
+  getMonitorDevices: async () => {
+    return await request.get({ url: '/admin/collector/integration/monitor/devices' })
   },
   // 获取监控性能指标
-  getMonitorPerformance: () => {
-    return request({
-      url: '/admin/collector/integration/monitor/performance',
-      method: 'get'
-    })
+  getMonitorPerformance: async () => {
+    return await request.get({ url: '/admin/collector/integration/monitor/performance' })
   },
   // 获取监控系统资源
-  getMonitorSystem: () => {
-    return request({
-      url: '/admin/collector/integration/monitor/system',
-      method: 'get'
-    })
+  getMonitorSystem: async () => {
+    return await request.get({ url: '/admin/collector/integration/monitor/system' })
   },
   // 获取监控错误统计
-  getMonitorErrors: () => {
-    return request({
-      url: '/admin/collector/integration/monitor/errors',
-      method: 'get'
-    })
+  getMonitorErrors: async () => {
+    return await request.get({ url: '/admin/collector/integration/monitor/errors' })
   }
 }
