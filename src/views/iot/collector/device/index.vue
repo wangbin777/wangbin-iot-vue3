@@ -757,7 +757,7 @@ const handleEnableChange = async (row: any) => {
 
 const handleStartCollection = async (row: any) => {
   try {
-    await deviceApi.startDevice(row.deviceCode)
+    await deviceApi.startDevice(row.id)
     ElMessage.success('启动采集成功')
     // 刷新设备状态
     getDeviceList()
@@ -769,7 +769,7 @@ const handleStartCollection = async (row: any) => {
 
 const handleStopCollection = async (row: any) => {
   try {
-    await deviceApi.stopDevice(row.deviceCode)
+    await deviceApi.stopDevice(row.id)
     ElMessage.success('停止采集成功')
     // 刷新设备状态
     getDeviceList()
